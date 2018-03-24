@@ -12,7 +12,7 @@ toUnaryTests = TestList [ TestLabel "1 to unary" testToUnary1,
                         TestLabel "5 to unary" testToUnary5,
                         TestLabel "0 to unary" testToUnary0,
                         TestLabel "Negative to unary" testToUnaryNegative]
-fromUnaryTests = TestList   [TestLabel "1 from unary" testFromUnary0,
+fromUnaryTests = TestList   [TestLabel "1 from unary" testFromUnary1,
                             TestLabel "5 from unary" testfromUnary5,
                             TestLabel "0 from unary" testFromUnary0,
                             TestLabel "Negative from unary" testfromUnaryNegative]
