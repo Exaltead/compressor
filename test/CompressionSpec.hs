@@ -5,6 +5,16 @@ import qualified Data.BitVector as BV
 import qualified Compression as Comp
 
 
-compressionTests = TestList [TestLabel "0 in unary" testUnary_0]
+compressionTests = TestList [unaryTests]
 
-testUnary_0 = TestCase (assertEqual "Unary 0" "1" (BV.showBin (Comp.unary 0)))
+unaryTests = TestList [ TestLabel "Unary 1" testUnary1,
+                        TestLabel "Unary 5" testUnary5,
+                        TestLabel "Unary 0" testUnary0,
+                        TestLabel "Unary negative" testUnaryNegative]
+
+unaryTest :: Maybe String -> Int -> Test
+unaryTest res x = TestCase ( assertEqual "Bit representation" res (fmap BV.showBin . Comp.unary $ x))
+testUnary1 = unaryTest (Just "0b1") 1
+testUnary5 = unaryTest (Just "0b00001") 5
+testUnary0 = unaryTest Nothing 0
+testUnaryNegative = unaryTest Nothing (-123456)
