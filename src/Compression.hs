@@ -1,4 +1,4 @@
-module Compression (golompRize,
+module Compression (toGolompRize,
                     toUnary,
                     fromUnary) where
 
@@ -7,11 +7,15 @@ import Data.Bits(Bits)
 import Data.BitVector(BitVector)
 import qualified Data.BitVector as BV
 
-golompRize :: Bits b => Int -> b -> BitVector
+toGolompRize :: Int -> Int -> Maybe BitVector
 -- compute l = x mod (2^k), h = floor(i / (2^k))
---
-golompRize _ _ = BV.bitVec 1 1
+-- code h+1 in unary and append binary l in k bits
+toGolompRize k x = fmap (`BV.append` l) h
+                where   core = 2 ^ k
+                        h = toUnary((x `div` core) + 1)
+                        l = BV.bitVec k (x `mod` core)
 
+--fromGolompRize :: Int -> BitVector -> Maybe Int
 -- Unary = N-1 leading zeros and 1
 toUnary :: Int -> Maybe BitVector
 toUnary v   | v > 0 = Just (BV.bitVec v 1)
