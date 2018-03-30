@@ -1,8 +1,11 @@
 import Test.HUnit
 import CompressionSpec
+import BitUtilSpec
+
+testSuites = TestList [compressionTests, bitUtilsTests]
 
 main :: IO ()
-main =  runTestTT compressionTests >>= wasSuccesful
+main =  runTestTT testSuites >>= wasSuccesful
 
 wasSuccesful :: Counts -> IO()
 wasSuccesful (Counts _ _ _ f)
