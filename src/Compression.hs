@@ -1,11 +1,18 @@
-module Compression (toGolompRize,
-                    fromGolompRize,
-                    toUnary,
-                    fromUnary) where
+module Compression (Encoding(..), encoder, decoder) where
 import Control.Monad.Zip(mzip)
 import Data.BitVector
 import Control.Arrow ((***))
 import BitUtils
+
+data Encoding = Unary | GR Int
+
+encoder :: Encoding -> (Int -> Maybe BitVector)
+encoder Unary = toUnary
+encoder (GR k) = toGolompRize k
+
+decoder :: Encoding -> (BitVector -> Maybe Int)
+decoder Unary = fromUnary
+decoder (GR k) = fromGolompRize k
 
 toGolompRize :: Int -> Int -> Maybe BitVector
 -- compute l = x mod (2^k), h = floor(i / (2^k))
@@ -17,9 +24,9 @@ toGolompRize k x = fmap (`append` l) h
 
 -- decoding expects the bitvector to contain only the decodable string
 fromGolompRize :: Int -> BitVector -> Maybe Int
-fromGolompRize  = fmap (gRPartsDecode k) . extractUnaryHead
+fromGolompRize k = fmap (gRPartsDecode k) . extractUnaryHead
 
-extractUnaryHead :: Monad m => BitVector -> m (BitVector, BitVector)
+extractUnaryHead :: BitVector -> Maybe (BitVector, BitVector)
 extractUnaryHead bv | uint bv > 0 = return ( splitBitsAt (msb1 bv)  bv)
                     | otherwise = fail "Has to have nonzero bit"
 gRPartsDecode :: Int -> (BitVector,  BitVector) -> Int

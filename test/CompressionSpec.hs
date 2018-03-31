@@ -3,7 +3,7 @@ module CompressionSpec (compressionTests) where
 import Test.HUnit
 import Data.BitVector(BitVector)
 import qualified Data.BitVector as BV
-import qualified Compression as CP
+import Compression
 
 
 compressionTests = TestList [
@@ -37,17 +37,17 @@ gRDecodeTests = TestList [
 
 toUnaryTest :: Maybe String -> Int -> Test
 toUnaryTest res x = TestCase ( assertEqual "Encoded value"
-                        res (bitstring . CP.toUnary $ x))
+                        res (bitstring . encoder Unary $ x))
 fromUnaryTest :: Maybe Int -> BitVector  -> Test
 fromUnaryTest res x = TestCase ( assertEqual "Decoded value"
-                        res (CP.fromUnary x))
+                        res (decoder Unary x))
 
 toGolompRizeTest :: Int -> Maybe String -> Int -> Test
 toGolompRizeTest k ex v = TestCase( assertEqual "Encoded value"
-                            ex (bitstring . CP.toGolompRize k $ v))
+                            ex (bitstring . encoder (GR k) $ v))
 
 gRDecodeTest :: Int -> Maybe Int -> Test
-gRDecodeTest k = decodabilityTest (CP.toGolompRize k) (CP.fromGolompRize k)
+gRDecodeTest k = decodabilityTest (encoder (GR k)) (decoder (GR k))
 
 decodabilityTest :: (Int -> Maybe a) -> (a -> Maybe Int) -> Maybe Int -> Test
 decodabilityTest to from v = TestCase(assertEqual "Encoded and decoded value" v (v >>= to >>= from))
