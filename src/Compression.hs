@@ -1,49 +1,39 @@
 module Compression (toGolompRize,
+                    fromGolompRize,
                     toUnary,
                     fromUnary) where
-
-import qualified Data.Bits as Bits
-import Data.Bits(Bits)
-import Data.BitVector(BitVector)
-import qualified Data.BitVector as BV
+import Control.Monad.Zip(mzip)
+import Data.BitVector
 import Control.Arrow ((***))
+import BitUtils
 
 toGolompRize :: Int -> Int -> Maybe BitVector
 -- compute l = x mod (2^k), h = floor(i / (2^k))
 -- code h+1 in unary and append binary l in k bits
-toGolompRize k x = fmap (`BV.append` l) h
+toGolompRize k x = fmap (`append` l) h
                 where   core = 2 ^ k
                         h = toUnary((x `div` core) + 1)
-                        l = BV.bitVec k (x `mod` core)
+                        l = bitVec k (x `mod` core)
 
 -- decoding expects the bitvector to contain only the decodable string
 fromGolompRize :: Int -> BitVector -> Maybe Int
--- find h by finding the most significant 1
--- take the i +1-> end uint value as tail
--- multiply h by 2 ^ k and add the tail
-fromGolompRize k = fmap (fromInteger . uncurry(+) . (decodeGRHead k *** decodeGRTail)) . splitWith indexOfLeading1
+fromGolompRize  = fmap (gRPartsDecode k) . extractUnaryHead
 
-indexOfLeading1 :: BitVector -> Maybe Int
-indexOfLeading1 bv | BV.uint bv /= 0 = Just . BV.msb1 $ bv
-                   | otherwise = Nothing
+extractUnaryHead :: Monad m => BitVector -> m (BitVector, BitVector)
+extractUnaryHead bv | uint bv > 0 = return ( splitBitsAt (msb1 bv)  bv)
+                    | otherwise = fail "Has to have nonzero bit"
+gRPartsDecode :: Int -> (BitVector,  BitVector) -> Int
+gRPartsDecode k (h, t) = ((2^k) * (size h - 1)) + fromInteger (uint t)
 
-splitWith :: (BitVector -> Maybe Int) -> BitVector ->  Maybe (BitVector, BitVector)
-splitWith f bv = splitBitsAt bv <$> f bv
+splitBitsAt :: Int -> BitVector ->  (BitVector, BitVector)
+splitBitsAt i v  = (most (size v - i) v, least i v)
 
-splitBitsAt :: BitVector -> Int ->  (BitVector, BitVector)
-splitBitsAt bv i  = (BV.most i bv , BV.least i bv)
-
-decodeGRHead :: Int ->  BitVector -> Maybe Int
-decodeGRHead k = fmap (\h -> (h - 1) * (2 ^k)) . fromUnary
-
-decodeGRTail :: BitVector -> Integer
-decodeGRTail = BV.uint
 
 -- Unary = N-1 leading zeros and 1
 toUnary :: Int -> Maybe BitVector
-toUnary v   | v > 0 = Just (BV.bitVec v 1)
+toUnary v   | v > 0 = Just (bitVec v 1)
             | otherwise = Nothing
 
 fromUnary :: BitVector -> Maybe Int
-fromUnary bv    | BV.uint bv == 1 = Just (BV.size bv)
+fromUnary bv    | uint bv == 1 = Just (size bv)
                 | otherwise = Nothing
